@@ -50,7 +50,7 @@ app.use((err, req, res, next) => {
       console.log(`🚀 Server listening on ${PORT}`);
     });
   } catch (err) {
-    console.error("❌ DB FAILED:", err.message);
+    console.error("❌ DB FAILED:", err);
     process.exit(1); // BIAR Railway tau gagal
   }
 })();
