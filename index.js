@@ -1,35 +1,30 @@
 const express = require("express");
 const fileUpload = require("express-fileupload");
 
-// Load dotenv hanya di local
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+const sequelize = require("./src/config/db");
+require("./src/api/v1/models");
 
-// =====================
+const app = express();
+const PORT = process.env.PORT; // WAJIB dari Railway
+
 // Middleware
-// =====================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload());
-app.use(express.static("public"));
 
-// =====================
-// Root (WAJIB ADA & CEPAT)
-// =====================
+// Root — WAJIB cepat
 app.get("/", (req, res) => {
-  res.json({
+  res.status(200).json({
     status: "OK",
-    message: "API Toko berjalan",
+    service: "API Toko",
   });
 });
 
-// =====================
-// Routers
-// =====================
+// Routes
 app.use("/api/v1", require("./src/api/v1/jenis_produk/router"));
 app.use("/api/v1", require("./src/api/v1/produk/router"));
 app.use("/api/v1", require("./src/api/v1/pelanggan/router"));
@@ -39,35 +34,23 @@ app.use("/api/v1", require("./src/api/v1/kartu/router"));
 app.use("/api/v1", require("./src/api/v1/history/router"));
 app.use("/api/v1", require("./src/api/v1/user/router"));
 
-// =====================
-// Error Handler (paling bawah)
-// =====================
+// Error handler
 app.use((err, req, res, next) => {
-  console.error("🔥 ERROR:", err);
-  res.status(500).json({
-    msg: "Terjadi kesalahan server",
-    error: process.env.NODE_ENV === "development" ? err.message : undefined,
-  });
+  console.error(err);
+  res.status(500).json({ message: "Internal Server Error" });
 });
 
-// =====================
-// START SERVER (DULU)
-// =====================
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
-
-// =====================
-// CONNECT DB (BELAKANGAN)
-// =====================
+// 🚀 START SETELAH DB OK
 (async () => {
   try {
-    const sequelize = require("./src/config/db");
-    require("./src/api/v1/models");
-
     await sequelize.authenticate();
     console.log("✅ Database connected");
+
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`🚀 Server listening on ${PORT}`);
+    });
   } catch (err) {
-    console.error("❌ Database connection failed:", err.message);
+    console.error("❌ DB FAILED:", err.message);
+    process.exit(1); // BIAR Railway tau gagal
   }
 })();
